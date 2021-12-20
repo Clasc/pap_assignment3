@@ -17,6 +17,8 @@ int main(int argc, char const* argv[]) {
     std::cout << "m:" << m << std::endl << "n:" << n << std::endl << "p:" << p << std::endl;
 
     float mat[m][n][p];
+
+    //prefill the matrix
     std::cout << "fill array..." << std::endl;
     for (size_t i = 0; i < m; i++) {
         for (size_t j = 0; j < n; j++) {
@@ -25,6 +27,8 @@ int main(int argc, char const* argv[]) {
             mat[i][j][2] = j / (i + 1.f);
         }
     }
+
+    // solve equations for 1 iteration
     std::cout << "solve equation..." << std::endl;
     for (size_t i = 0; i < m - 1; i++) {
         for (size_t j = 0; j < n - 1; j++) {
@@ -33,6 +37,7 @@ int main(int argc, char const* argv[]) {
         }
     }
 
+    // print matrix
     for (size_t i = 0; i < m; i++) {
         std::cout << "[" << std::endl;
         for (size_t j = 0; j < n; j++) {
