@@ -2,7 +2,8 @@
 #include <stdio.h>
 #include <math.h>
 // const int m = 8192, n = 8192, p = 3;
-const int m = 100, n = 100, p = 3;
+// let the size of the matrix be divisible by 32
+const int m = 128, n = 128, p = 3;
 float A[m][n][p];
 
 int main() {
