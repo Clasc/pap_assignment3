@@ -4,9 +4,9 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "g++ build serial",
+            "label": "g++ build sequential",
             "type": "shell",
-            "command": "g++ serial.cpp -o out/serial.out",
+            "command": "g++ sequential_version.cpp -o out/sequential.out",
             "group": {
                 "kind": "build",
                 "isDefault": true

@@ -8,7 +8,7 @@
             "name": "g++ launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/out/serial.out",
+            "program": "${workspaceFolder}/out/sequential.out",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -22,7 +22,7 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "g++ build serial",
+            "preLaunchTask": "g++ build sequential",
             "miDebuggerPath": "/usr/bin/gdb"
         }
     ]
