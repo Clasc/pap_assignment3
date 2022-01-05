@@ -5,7 +5,12 @@ set(CMAKE_CXX_STANDARD 14)
 
 include_directories(.)
 include_directories(header)
+find_package(OpenCL REQUIRED)
+
 
 add_executable(pap_assignment3
-        header/serial_solver.h
-        src/sequential_version.cpp)
+        src/sequential_version.cpp
+        src/parallel_version.cpp
+        )
+
+target_link_libraries(pap_assignment3 OpenCL_LIBRARY OpenCL_INCLUDE_DIR)
