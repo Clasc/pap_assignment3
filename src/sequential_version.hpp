@@ -6,7 +6,7 @@
 const int m = 128, n = 128, p = 3;
 float A[m][n][p];
 
-int main() {
+int run_sequential() {
 	for (int i = 0; i < m; i++) {
 		for (int j = 0; j < n; j++) {
 			A[i][j][0] = (float)i / ((float)j + 1.00);
