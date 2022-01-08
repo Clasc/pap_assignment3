@@ -8,7 +8,7 @@
             "name": "g++ launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/out/sequential.out",
+            "program": "${workspaceFolder}/build/pap_assignment3",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
