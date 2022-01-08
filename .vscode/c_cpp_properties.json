@@ -8,8 +8,44 @@
             "defines": [],
             "cStandard": "gnu17",
             "intelliSenseMode": "linux-gcc-x64",
-            "configurationProvider": "go2sh.cmake-integration"
+            "configurationProvider": "go2sh.cmake-integration",
+            "macFrameworkPath": [],
+            "windowsSdkVersion": "10.0.17763.0",
+            "compilerArgs": [],
+            "cppStandard": "c++17",
+            "mergeConfigurations": false,
+            "compilerPath": "usr/bin/gcc",
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/**"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
         },
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/**"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "windowsSdkVersion": "10.0.17763.0",
+            "compilerPath": "C:/msys64/mingw64/bin/g++.exe",
+            "cStandard": "c17",
+            "compilerArgs": [],
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-x64",
+            "mergeConfigurations": false,
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/**"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
+        }
     ],
     "version": 4
 }
