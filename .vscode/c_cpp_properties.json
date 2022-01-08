@@ -14,7 +14,7 @@
             "compilerArgs": [],
             "cppStandard": "c++17",
             "mergeConfigurations": false,
-            "compilerPath": "usr/bin/gcc",
+            "compilerPath": "/usr/bin/gcc",
             "browse": {
                 "path": [
                     "${workspaceFolder}/**"
