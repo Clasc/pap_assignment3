@@ -12,5 +12,5 @@ void run_parallel() {
         return;
     }
 
-    printf("\nDetected OpenCL platforms: %d", numPlatforms);
+    printf("\nDetected OpenCL platforms: %d \n", numPlatforms);
 }
