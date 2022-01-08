@@ -25,7 +25,8 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "C:\\Users\\christianlascsak\\tools\\vcpkg\\packages\\opencl_x86-windows\\include"
             ],
             "defines": [
                 "_DEBUG",
