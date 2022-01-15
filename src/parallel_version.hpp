@@ -19,18 +19,24 @@ void tryInitOpenCL() {
 }
 
 // loads kernel source code into a buffer and returns the size of the source string
-size_t readClFile(const char* filename, char* buffer) {
-    auto file = fopen(filename, "r");
-    if (!file) {
-        fprintf(stderr, "Failed to load kernel.\n");
-        exit(1);
-    }
+static const char* source[] = {
+"__kernel void hello_world(__global char *string) {\n"
+"  string[0] = 'H';\n"
+"  string[1] = 'e';\n"
+"  string[2] = 'l';\n"
+"  string[3] = 'l';\n"
+"  string[4] = 'o';\n"
+"  string[5] = ',';\n"
+"  string[6] = ' ';\n"
+"  string[7] = 'W';\n"
+"  string[8] = 'o';\n"
+"  string[9] = 'r';\n"
+"  string[10] = 'l';\n"
+"  string[11] = 'd';\n"
+"  string[12] = '!';\n"
+"  string[13] = '\\0';\n"
+"}\n" };
 
-    buffer = (char*)malloc(MAX_SOURCE_SIZE);
-    auto source_size = sizeof(buffer) / sizeof(buffer[0]);
-    fclose(file);
-    return source_size;
-}
 
 void run_parallel() {
     try {
@@ -52,19 +58,23 @@ void run_parallel() {
     ret = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_DEFAULT, 1, &device_id, &num_devices);
 
     char message[MEM_SIZE];
+
     auto context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &ret);
 
     auto command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
 
     auto memory = clCreateBuffer(context, CL_MEM_READ_WRITE, MEM_SIZE * sizeof(char), NULL, &ret);
 
-    char* kernel_source;
-    auto source_size = readClFile("src/parallel.cl", kernel_source);
-    auto program = clCreateProgramWithSource(context, 1, (const char**)&kernel_source, &source_size, &ret);
+    auto program = clCreateProgramWithSource(context, 1, source, NULL, &ret);
 
     ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
 
     auto kernel = clCreateKernel(program, "hello_world", &ret);
+
+    if (ret) {
+        printf("an error occured during loading the source");
+        return;
+    }
 
     ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&memory);
 

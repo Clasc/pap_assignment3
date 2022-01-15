@@ -13,4 +13,4 @@ __kernel void hello_world(__global char *string) {
   string[11] = 'd';
   string[12] = '!';
   string[13] = '\0';
-};
+}
