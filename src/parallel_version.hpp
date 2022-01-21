@@ -3,9 +3,27 @@
 #include<stdio.h>
 #include<vector>
 #include<iostream>
-
-#define MEM_SIZE (128)
 #define MAX_SOURCE_SIZE (4096)
+
+static const int m = 4, n = 4, p = 2;
+static const size_t MEM_SIZE = m * n * p;
+
+int index_at(int x, int y, int z) {
+    return x + n * (y + p * z);
+}
+
+void safeImage(const char* filename, float* A) {
+    std::ofstream ofs(filename, std::ofstream::out);
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            for (int k = 0; k < p; k++) {
+                ofs << " " << A[index_at(i, j, k)];
+            }
+            ofs << std::endl;
+        }
+    }
+    ofs.close();
+}
 
 void tryInitOpenCL() {
     cl_int err;
@@ -20,25 +38,25 @@ void tryInitOpenCL() {
 
 // loads kernel source code into a buffer and returns the size of the source string
 static const char* source[] = {
-"__kernel void hello_world(__global char *string) {\n"
-"  string[0] = 'H';\n"
-"  string[1] = 'e';\n"
-"  string[2] = 'l';\n"
-"  string[3] = 'l';\n"
-"  string[4] = 'o';\n"
-"  string[5] = ',';\n"
-"  string[6] = ' ';\n"
-"  string[7] = 'W';\n"
-"  string[8] = 'o';\n"
-"  string[9] = 'r';\n"
-"  string[10] = 'l';\n"
-"  string[11] = 'd';\n"
-"  string[12] = '!';\n"
-"  string[13] = '\\0';\n"
-"}\n" };
+"int index_at(const int n, const int p, int x, int y, int z) {\n"
+"  return x + n * (y + p * z);\n"
+"}\n"
+"\n"
 
+"__kernel void setMatrix(const int maxRow, const int maxCol, const int maxDepth,\n"
+"                        __global float *A) {\n"
+"  const int row = get_global_id(0);\n"
+"  const int col = get_global_id(1);\n"
+"  int depth = 0;\n"
+"  int index = index_at(maxCol, maxDepth, row, col, depth);\n"
+"  A[index] = (float)row / ((float)col + 1.00);\n"
+"  A[++index] = 1.00;\n"
+"  A[++index] = (float)col / ((float)row + 1.00);\n"
+"}\n"
+};
 
 void run_parallel() {
+
     try {
         tryInitOpenCL();
     }
@@ -56,34 +74,38 @@ void run_parallel() {
     cl_device_id device_id;
     cl_uint num_devices;
     ret = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_DEFAULT, 1, &device_id, &num_devices);
-
-    char message[MEM_SIZE];
+    float A[MEM_SIZE];
 
     auto context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &ret);
 
     auto command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
 
-    auto memory = clCreateBuffer(context, CL_MEM_READ_WRITE, MEM_SIZE * sizeof(char), NULL, &ret);
 
     auto program = clCreateProgramWithSource(context, 1, source, NULL, &ret);
 
     ret = clBuildProgram(program, 1, &device_id, NULL, NULL, NULL);
 
-    auto kernel = clCreateKernel(program, "hello_world", &ret);
+    auto kernel = clCreateKernel(program, "setMatrix", &ret);
 
     if (ret) {
         printf("an error occured during loading the source");
         return;
     }
 
-    ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&memory);
+    auto memory = clCreateBuffer(context, CL_MEM_READ_WRITE, MEM_SIZE * sizeof(char), NULL, &ret);
 
-    ret = clEnqueueTask(command_queue, kernel, 0, NULL, NULL);
+    ret = clSetKernelArg(kernel, 0, sizeof(int), (void*)&m);
+    ret = clSetKernelArg(kernel, 1, sizeof(int), (void*)&n);
+    ret = clSetKernelArg(kernel, 2, sizeof(int), (void*)&p);
+    ret = clSetKernelArg(kernel, 3, sizeof(cl_mem), (void*)&memory);
+
+    const size_t global_worksize = m * n;
+
+    ret = clEnqueueNDRangeKernel(command_queue, kernel, 2, NULL, &global_worksize, NULL, 0, NULL, NULL);
+    // ret = clEnqueueTask(command_queue, kernel, 0, NULL, NULL);
 
     ret = clEnqueueReadBuffer(command_queue, memory, CL_TRUE, 0,
-        MEM_SIZE * sizeof(char), message, 0, NULL, NULL);
-
-    puts(message);
+        MEM_SIZE * sizeof(float), A, 0, NULL, NULL);
 
     /* Finalization */
     ret = clFlush(command_queue);
@@ -93,5 +115,6 @@ void run_parallel() {
     ret = clReleaseMemObject(memory);
     ret = clReleaseCommandQueue(command_queue);
     ret = clReleaseContext(context);
-}
 
+    safeImage("matrix_parallel.txt", A);
+}
