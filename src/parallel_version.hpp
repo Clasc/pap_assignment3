@@ -3,16 +3,9 @@
 #include<stdio.h>
 #include<vector>
 #include<iostream>
-#define MAX_SOURCE_SIZE (4096)
 
-static const cl_int m = 4, n = 4, p = 3;
-static const size_t MEM_SIZE = m * n * p;
-
-int index_at(int x, int y, int z) {
-    return x + n * (y + p * z);
-}
-
-void safeImage(const char* filename, float* A) {
+void safeImage(const char* filename, float* A, const size_t m, size_t n, size_t p) {
+    auto index_at = [&m, &n, &p](int x, int y, int z) {return x + n * (y + p * z);};
     std::ofstream ofs(filename, std::ofstream::out);
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {
@@ -51,7 +44,9 @@ static const char* source[] = {
 "}"
 };
 
-void run_parallel() {
+// pass sizes for dimensions
+void run_parallel(const size_t m, const size_t n, const cl_int p) {
+    const size_t MEM_SIZE = m * n * p;
 
     try {
         tryInitOpenCL();
@@ -109,5 +104,5 @@ void run_parallel() {
     ret = clReleaseCommandQueue(command_queue);
     ret = clReleaseContext(context);
 
-    safeImage("matrix_parallel.txt", result);
+    safeImage("matrix_parallel.txt", result, m, n, p);
 }

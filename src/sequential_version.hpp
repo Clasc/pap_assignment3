@@ -2,11 +2,11 @@
 #include <stdio.h>
 #include <math.h>
 
-int run_sequential() {
+// pass sizes for dimensions
+int run_sequential(const int m, const int n, const int p) {
 
 	// const int m = 8192, n = 8192, p = 3;
 	// let the size of the matrix be divisible by 32
-	const int m = 4, n = 4, p = 3;
 	float A[m][n][p];
 	for (int i = 0; i < m; i++) {
 		for (int j = 0; j < n; j++) {
