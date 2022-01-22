@@ -32,6 +32,9 @@ __kernel void setMatrix(__global float *A) {
 __kernel void calculatMatrix(__global float *A_in) {
   const int i = get_global_id(0);
   const int j = get_global_id(1);
+  if (i < 1 || i == get_global_size(0) - 1) {
+    return;
+  }
   A_in[index_at(i, j, 1)] +=
       1 / sqrt(A_in[index_at(i + 1, j, 0)] + A_in[index_at(i - 1, j, 2)]);
 }
