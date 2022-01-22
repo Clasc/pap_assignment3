@@ -32,6 +32,9 @@ __kernel void setMatrix(__global float *A) {
 __kernel void calculatMatrix(__global float *A_in, __global float *A_out) {
   const int i = get_global_id(0);
   const int j = get_global_id(1);
-  A_out[index_at(i, j, 1)] +=
+  // TODO: add a barrier - it's needed here, because we read at i-1 and i+1
+  printf("i * %i\n", i);
+  A_out[index_at(i, j, 1)] =
+      A_in[index_at(i, j, 1)] +
       1 / sqrt(A_in[index_at(i + 1, j, 0)] + A_in[index_at(i - 1, j, 2)]);
 }
