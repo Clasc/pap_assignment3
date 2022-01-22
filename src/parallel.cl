@@ -15,17 +15,17 @@ __kernel void hello_world(__global char *string) {
   string[13] = '\0';
 }
 
-int index_at(const int p, int x, int y, int z) {
+int index_at(int x, int y, int z) {
   int m = get_global_size(0);
   int n = get_global_size(1);
   return x + m * (y + n * z);
 }
 
-__kernel void setMatrix(const int maxDepth, __global float *A) {
+__kernel void setMatrix(__global float *A) {
   const int i = get_global_id(0);
   const int j = get_global_id(1);
-  int index = index_at(maxDepth, i, j, 0);
-  A[index_at(maxDepth, i, j, 0)] = (float)i / ((float)j + 1.00);
-  A[index_at(maxDepth, i, j, 1)] = 1.00;
-  A[index_at(maxDepth, i, j, 2)] = (float)j / ((float)i + 1.00);
+  int index = index_at(i, j, 0);
+  A[index_at(i, j, 0)] = (float)i / ((float)j + 1.00);
+  A[index_at(i, j, 1)] = 1.00;
+  A[index_at(i, j, 2)] = (float)j / ((float)i + 1.00);
 }

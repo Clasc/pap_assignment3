@@ -31,23 +31,23 @@ void tryInitOpenCL() {
 
 // loads kernel source code into a buffer and returns the size of the source string
 static const char* source[] = {
-"int index_at(const int p, int x, int y, int z) {\n"
+"int index_at(int x, int y, int z) {\n"
 "  int m = get_global_size(0);\n"
 "  int n = get_global_size(1);\n"
 "  return x + m * (y + n * z);\n"
 "}\n"
-"__kernel void setMatrix(const int maxDepth, __global float *A) {\n"
+"__kernel void setMatrix(__global float *A) {\n"
 "  const int i = get_global_id(0);\n"
 "  const int j = get_global_id(1);\n"
-"  int index = index_at(maxDepth, i, j, 0);\n"
-"  A[index_at(maxDepth, i, j, 0)] = (float)i / ((float)j + 1.00);\n"
-"  A[index_at(maxDepth, i, j, 1)] = 1.00;\n"
-"  A[index_at(maxDepth, i, j, 2)] = (float)j / ((float)i + 1.00);\n"
+"  int index = index_at(i, j, 0);\n"
+"  A[index_at(i, j, 0)] = (float)i / ((float)j + 1.00);\n"
+"  A[index_at(i, j, 1)] = 1.00;\n"
+"  A[index_at(i, j, 2)] = (float)j / ((float)i + 1.00);\n"
 "}\n"
 };
 
 // pass sizes for dimensions
-void run_parallel(const size_t m, const size_t n, const cl_int p) {
+void run_parallel(const size_t m, const size_t n, const size_t p) {
     const size_t MEM_SIZE = m * n * p;
 
     try {
@@ -86,8 +86,7 @@ void run_parallel(const size_t m, const size_t n, const cl_int p) {
     printf("buffer size = %i \n", buffer_size);
     auto memory = clCreateBuffer(context, CL_MEM_READ_WRITE, buffer_size, NULL, &ret);
 
-    ret = clSetKernelArg(kernel, 0, sizeof(cl_int), &p);
-    ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), &memory);
+    ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), &memory);
 
 
     const size_t global_worksize[2] = { m , n };
