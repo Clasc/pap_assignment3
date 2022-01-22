@@ -35,6 +35,8 @@ __kernel void calculatMatrix(__global float *A_in) {
   if (i < 1 || i == get_global_size(0) - 1) {
     return;
   }
-  A_in[index_at(i, j, 1)] +=
-      1 / sqrt(A_in[index_at(i + 1, j, 0)] + A_in[index_at(i - 1, j, 2)]);
+  for (int t = 0; t < 24; t++) {
+    A_in[index_at(i, j, 1)] +=
+        1 / sqrt(A_in[index_at(i + 1, j, 0)] + A_in[index_at(i - 1, j, 2)]);
+  }
 }

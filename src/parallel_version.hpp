@@ -23,11 +23,13 @@ static const char* source[] = {
 "__kernel void calculatMatrix(__global float *A_in) {\n"
 "  const int i = get_global_id(0);\n"
 "  const int j = get_global_id(1);\n"
-"  if (i < 1 || i == get_global_size(0) - 1){\n"
+"  if (i < 1 || i == get_global_size(0) - 1) {\n"
 "    return;\n"
 "  }\n"
-"  A_in[index_at(i, j, 1)] +=\n"
-"      1 / sqrt(A_in[index_at(i + 1, j, 0)] + A_in[index_at(i - 1, j, 2)]);\n"
+"  for (int t = 0; t < 24; t++) {\n"
+"    A_in[index_at(i, j, 1)] +=\n"
+"        1 / sqrt(A_in[index_at(i + 1, j, 0)] + A_in[index_at(i - 1, j, 2)]);\n"
+"  }\n"
 "}\n"
 };
 
