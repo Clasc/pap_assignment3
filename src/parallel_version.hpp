@@ -5,7 +5,7 @@
 #include<iostream>
 #define MAX_SOURCE_SIZE (4096)
 
-static const int m = 4, n = 4, p = 2;
+static const cl_int m = 4, n = 4, p = 2;
 static const size_t MEM_SIZE = m * n * p;
 
 int index_at(int x, int y, int z) {
@@ -42,16 +42,14 @@ static const char* source[] = {
 "  return x + n * (y + p * z);\n"
 "}\n"
 "\n"
-
 "__kernel void setMatrix(const int maxRow, const int maxCol, const int maxDepth,\n"
 "                        __global float *A) {\n"
 "  const int row = get_global_id(0);\n"
 "  const int col = get_global_id(1);\n"
-"  int depth = 0;\n"
-"  int index = index_at(maxCol, maxDepth, row, col, depth);\n"
-"  A[index] = (float)row / ((float)col + 1.00);\n"
-"  A[++index] = 1.00;\n"
-"  A[++index] = (float)col / ((float)row + 1.00);\n"
+"  index_at(maxCol, maxDepth, row, col, 0);\n"
+"  A[index_at(maxCol, maxDepth, row, col, 0)] = (float)row / ((float)col + 1.00);\n"
+"  A[index_at(maxCol, maxDepth, row, col, 1)] = 1.00;\n"
+"  A[index_at(maxCol, maxDepth, row, col, 2)] = (float)col / ((float)row + 1.00);\n"
 "}\n"
 };
 
@@ -74,12 +72,8 @@ void run_parallel() {
     cl_device_id device_id;
     cl_uint num_devices;
     ret = clGetDeviceIDs(platform_id, CL_DEVICE_TYPE_DEFAULT, 1, &device_id, &num_devices);
-    float A[MEM_SIZE];
-
     auto context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &ret);
-
     auto command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
-
 
     auto program = clCreateProgramWithSource(context, 1, source, NULL, &ret);
 
@@ -92,20 +86,23 @@ void run_parallel() {
         return;
     }
 
-    auto memory = clCreateBuffer(context, CL_MEM_READ_WRITE, MEM_SIZE * sizeof(char), NULL, &ret);
+    float result[MEM_SIZE];
+    size_t buffer_size = sizeof(result);
+    printf("buffer size = %i \n", buffer_size);
+    auto memory = clCreateBuffer(context, CL_MEM_READ_WRITE, buffer_size, NULL, &ret);
 
-    ret = clSetKernelArg(kernel, 0, sizeof(int), (void*)&m);
-    ret = clSetKernelArg(kernel, 1, sizeof(int), (void*)&n);
-    ret = clSetKernelArg(kernel, 2, sizeof(int), (void*)&p);
-    ret = clSetKernelArg(kernel, 3, sizeof(cl_mem), (void*)&memory);
+    ret = clSetKernelArg(kernel, 0, sizeof(cl_int), &m);
+    ret = clSetKernelArg(kernel, 1, sizeof(cl_int), &n);
+    ret = clSetKernelArg(kernel, 2, sizeof(cl_int), &p);
+    ret = clSetKernelArg(kernel, 3, sizeof(cl_mem), &memory);
 
-    const size_t global_worksize = m * n;
 
-    ret = clEnqueueNDRangeKernel(command_queue, kernel, 2, NULL, &global_worksize, NULL, 0, NULL, NULL);
+    const size_t global_worksize[2] = { m , n };
+    ret = clEnqueueNDRangeKernel(command_queue, kernel, 2, NULL, global_worksize, NULL, 0, NULL, NULL);
     // ret = clEnqueueTask(command_queue, kernel, 0, NULL, NULL);
 
     ret = clEnqueueReadBuffer(command_queue, memory, CL_TRUE, 0,
-        MEM_SIZE * sizeof(float), A, 0, NULL, NULL);
+        buffer_size, result, 0, NULL, NULL);
 
     /* Finalization */
     ret = clFlush(command_queue);
@@ -116,5 +113,5 @@ void run_parallel() {
     ret = clReleaseCommandQueue(command_queue);
     ret = clReleaseContext(context);
 
-    safeImage("matrix_parallel.txt", A);
+    safeImage("matrix_parallel.txt", result);
 }

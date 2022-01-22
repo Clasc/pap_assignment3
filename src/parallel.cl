@@ -23,9 +23,10 @@ __kernel void setMatrix(const int maxRow, const int maxCol, const int maxDepth,
                         __global float *A) {
   const int row = get_global_id(0);
   const int col = get_global_id(1);
-  int depth = 0;
-  int index = index_at(maxCol, maxDepth, row, col, depth);
-  A[index] = (float)row / ((float)col + 1.00);
-  A[++index] = 1.00;
-  A[++index] = (float)col / ((float)row + 1.00);
+  printf("maxCol: %i\n", maxCol);
+  printf("maxDepth: %i\n", maxDepth);
+  index_at(maxCol, maxDepth, row, col, 0);
+  A[index_at(maxCol, maxDepth, row, col, 0)] = (float)row / ((float)col + 1.00);
+  A[index_at(maxCol, maxDepth, row, col, 1)] = 1.00;
+  A[index_at(maxCol, maxDepth, row, col, 2)] = (float)col / ((float)row + 1.00);
 }
