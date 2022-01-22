@@ -39,7 +39,6 @@ static const char* source[] = {
 "__kernel void setMatrix(__global float *A) {\n"
 "  const int i = get_global_id(0);\n"
 "  const int j = get_global_id(1);\n"
-"  int index = index_at(i, j, 0);\n"
 "  A[index_at(i, j, 0)] = (float)i / ((float)j + 1.00);\n"
 "  A[index_at(i, j, 1)] = 1.00;\n"
 "  A[index_at(i, j, 2)] = (float)j / ((float)i + 1.00);\n"

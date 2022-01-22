@@ -24,7 +24,6 @@ int index_at(int x, int y, int z) {
 __kernel void setMatrix(__global float *A) {
   const int i = get_global_id(0);
   const int j = get_global_id(1);
-  int index = index_at(i, j, 0);
   A[index_at(i, j, 0)] = (float)i / ((float)j + 1.00);
   A[index_at(i, j, 1)] = 1.00;
   A[index_at(i, j, 2)] = (float)j / ((float)i + 1.00);
