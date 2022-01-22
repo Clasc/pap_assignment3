@@ -3,8 +3,6 @@
 #include<stdio.h>
 #include<vector>
 #include<iostream>
-#include "utils.hpp"
-
 
 // loads kernel source code into a buffer and returns the size of the source string
 static const char* source[] = {
@@ -178,7 +176,7 @@ void cleanup(clConfig& config, cl_program& program) {
 }
 
 // pass sizes for dimensions and returns time run
-double run_parallel(const size_t m, const size_t n, const size_t p) {
+double run_parallel() {
     try {
         tryInitOpenCL();
     }
@@ -191,7 +189,6 @@ double run_parallel(const size_t m, const size_t n, const size_t p) {
     auto config = createContext();
 
     auto program = createProgram(source, config);
-    float buff[m * n * p];
     auto setMatrix = (myBuff){
         buff,
         sizeof(buff)

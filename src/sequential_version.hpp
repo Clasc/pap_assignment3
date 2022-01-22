@@ -4,12 +4,11 @@
 #include <time.h>
 #include <chrono>
 using namespace std;
-// pass sizes for dimensions and returns time run
-double run_sequential(const int m, const int n, const int p) {
 
+// sizes cannot be passed because of segmentation faults -> have to be static to be that big!
+double run_sequential() {
 	// const int m = 8192, n = 8192, p = 3;
 	// let the size of the matrix be divisible by 32
-	float A[m][n][p];
 	for (int i = 0; i < m; i++) {
 		for (int j = 0; j < n; j++) {
 			A[i][j][0] = (float)i / ((float)j + 1.00);
