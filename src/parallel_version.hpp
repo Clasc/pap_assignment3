@@ -5,7 +5,7 @@
 #include<iostream>
 
 void safeImage(const char* filename, float* A, const size_t m, size_t n, size_t p) {
-    auto index_at = [&m, &n, &p](int x, int y, int z) {return x + n * (y + p * z);};
+    auto index_at = [&m, &n, &p](int x, int y, int z) {return x + m * (y + n * z);};
     std::ofstream ofs(filename, std::ofstream::out);
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {
@@ -31,17 +31,19 @@ void tryInitOpenCL() {
 
 // loads kernel source code into a buffer and returns the size of the source string
 static const char* source[] = {
-"int index_at(const int p, int x, int y, int z) {"
-"  int n = get_global_size(1);"
-"  return x + n * (y + p * z);"
-"}"
-"__kernel void setMatrix(const int maxDepth, __global float *A) {"
-"  const int row = get_global_id(0);"
-"  const int col = get_global_id(1);"
-"  A[index_at(maxDepth, row, col, 0)] = (float)row / ((float)col + 1.00);"
-"  A[index_at(maxDepth, row, col, 1)] = 1.00;"
-"  A[index_at(maxDepth, row, col, 2)] = (float)col / ((float)row + 1.00);"
-"}"
+"int index_at(const int p, int x, int y, int z) {\n"
+"  int m = get_global_size(0);\n"
+"  int n = get_global_size(1);\n"
+"  return x + m * (y + n * z);\n"
+"}\n"
+"__kernel void setMatrix(const int maxDepth, __global float *A) {\n"
+"  const int i = get_global_id(0);\n"
+"  const int j = get_global_id(1);\n"
+"  int index = index_at(maxDepth, i, j, 0);\n"
+"  A[index_at(maxDepth, i, j, 0)] = (float)i / ((float)j + 1.00);\n"
+"  A[index_at(maxDepth, i, j, 1)] = 1.00;\n"
+"  A[index_at(maxDepth, i, j, 2)] = (float)j / ((float)i + 1.00);\n"
+"}\n"
 };
 
 // pass sizes for dimensions

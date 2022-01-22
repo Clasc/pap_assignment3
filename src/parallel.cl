@@ -16,14 +16,16 @@ __kernel void hello_world(__global char *string) {
 }
 
 int index_at(const int p, int x, int y, int z) {
+  int m = get_global_size(0);
   int n = get_global_size(1);
-  return x + n * (y + p * z);
+  return x + m * (y + n * z);
 }
 
 __kernel void setMatrix(const int maxDepth, __global float *A) {
-  const int row = get_global_id(0);
-  const int col = get_global_id(1);
-  A[index_at(maxDepth, row, col, 0)] = (float)row / ((float)col + 1.00);
-  A[index_at(maxDepth, row, col, 1)] = 1.00;
-  A[index_at(maxDepth, row, col, 2)] = (float)col / ((float)row + 1.00);
+  const int i = get_global_id(0);
+  const int j = get_global_id(1);
+  int index = index_at(maxDepth, i, j, 0);
+  A[index_at(maxDepth, i, j, 0)] = (float)i / ((float)j + 1.00);
+  A[index_at(maxDepth, i, j, 1)] = 1.00;
+  A[index_at(maxDepth, i, j, 2)] = (float)j / ((float)i + 1.00);
 }
