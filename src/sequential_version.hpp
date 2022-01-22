@@ -1,9 +1,11 @@
 #include <fstream>
 #include <stdio.h>
 #include <math.h>
-
-// pass sizes for dimensions
-int run_sequential(const int m, const int n, const int p) {
+#include <time.h>
+#include <chrono>
+using namespace std;
+// pass sizes for dimensions and returns time run
+double run_sequential(const int m, const int n, const int p) {
 
 	// const int m = 8192, n = 8192, p = 3;
 	// let the size of the matrix be divisible by 32
@@ -16,6 +18,7 @@ int run_sequential(const int m, const int n, const int p) {
 		}
 	}
 
+	auto t1 = chrono::high_resolution_clock::now();
 	//Iteration count
 	for (int t = 0; t < 24; t++) {
 		//each row - beware first row and last row not to be updated therefore from 1...m-1
@@ -27,19 +30,21 @@ int run_sequential(const int m, const int n, const int p) {
 			}
 		}
 	}
+	auto t2 = chrono::high_resolution_clock::now();
+	auto diff = chrono::duration<double>(t2 - t1).count();
 
 	// save image
-	std::ofstream ofs("sequential_matrix.txt", std::ofstream::out);
-	for (int i = 0; i < m; i++) {
-		for (int j = 0; j < n; j++) {
-			for (int k = 0; k < p; k++) {
-				ofs << " " << A[i][j][k];
-			}
-			ofs << "    ";
-		}
-		ofs << std::endl;
-	}
+	// std::ofstream ofs("sequential_matrix.txt", std::ofstream::out);
+	// for (int i = 0; i < m; i++) {
+	// 	for (int j = 0; j < n; j++) {
+	// 		for (int k = 0; k < p; k++) {
+	// 			ofs << " " << A[i][j][k];
+	// 		}
+	// 		ofs << "    ";
+	// 	}
+	// 	ofs << std::endl;
+	// }
 
-	ofs.close();
-	return 0;
+	// ofs.close();
+	return diff;
 }

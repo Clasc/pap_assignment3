@@ -3,7 +3,7 @@
 #include<stdio.h>
 #include<vector>
 #include<iostream>
-
+#include "utils.hpp"
 
 
 // loads kernel source code into a buffer and returns the size of the source string
@@ -33,20 +33,6 @@ static const char* source[] = {
 "}\n"
 };
 
-void safeImage(const char* filename, float* A, const size_t m, size_t n, size_t p) {
-    auto index_at = [&m, &n, &p](int x, int y, int z) {return x + m * (y + n * z);};
-    std::ofstream ofs(filename, std::ofstream::out);
-    for (int i = 0; i < m; i++) {
-        for (int j = 0; j < n; j++) {
-            for (int k = 0; k < p; k++) {
-                ofs << " " << A[index_at(i, j, k)];
-            }
-            ofs << "    ";
-        }
-        ofs << std::endl;
-    }
-    ofs.close();
-}
 
 struct clConfig {
     cl_platform_id platform_id;
@@ -113,7 +99,7 @@ void tryInitOpenCL() {
 }
 
 
-void runCalculation(const clConfig& config, cl_program& program, const size_t m, const size_t n, const size_t p, myBuff& matrix) {
+double runCalculation(const clConfig& config, cl_program& program, const size_t m, const size_t n, const size_t p, myBuff& matrix) {
     auto kernel = myloadKernel(program, "calculatMatrix");
 
     //i needs to iterate from 1 to m-1, so we need to decrease it by 1
@@ -123,40 +109,46 @@ void runCalculation(const clConfig& config, cl_program& program, const size_t m,
     const size_t global_offset[2] = { 0,0 };
     const size_t global_worksize[2] = { m , n };
 
-    printf("offset  = %i \n", global_offset[0]);
-    printf("new m  = %i \n", global_worksize[0]);
-    printf("buffer size out = %i \n", matrix.size);
+    // printf("offset  = %i \n", global_offset[0]);
+    // printf("new m  = %i \n", global_worksize[0]);
+    // printf("buffer size out = %i \n", matrix.size);
+
     cl_int ret;
     auto memobj = clCreateBuffer(config.context, CL_MEM_COPY_HOST_PTR, matrix.size, matrix.buffer, &ret);
     ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), &memobj);
     if (ret != CL_SUCCESS) {
         printf("something went wrong setting the kernel arguments!  %i", ret);
-        return;
-    }
-    ret = clEnqueueNDRangeKernel(config.command_queue, kernel, 2, global_offset, global_worksize, NULL, 0, NULL, NULL);
-    // ret = clEnqueueTask(command_queue, kernel, 0, NULL, NULL);
-    if (ret != CL_SUCCESS) {
-        printf("something went wrong at enquerange!  %i", ret);
-        return;
+        throw runtime_error("cl error");
     }
 
-    ret = clEnqueueReadBuffer(config.command_queue, memobj, CL_TRUE, 0,
-        matrix.size, matrix.buffer, 0, NULL, NULL);
+    auto parallelExec = measure([&] {
+        ret = clEnqueueNDRangeKernel(config.command_queue, kernel, 2, global_offset, global_worksize, NULL, 0, NULL, NULL);
+        // ret = clEnqueueTask(command_queue, kernel, 0, NULL, NULL);
+        if (ret != CL_SUCCESS) {
+            printf("something went wrong at enquerange!  %i", ret);
+            throw runtime_error("cl error");
+        }
+
+        ret = clEnqueueReadBuffer(config.command_queue, memobj, CL_TRUE, 0,
+            matrix.size, matrix.buffer, 0, NULL, NULL);
+        });
+
 
     if (ret != CL_SUCCESS) {
         printf("something went wrong at enqread!  %i", ret);
-        return;
+        throw runtime_error("cl error");
     }
 
     ret = clReleaseKernel(kernel);
     ret = clReleaseMemObject(memobj);
+    return parallelExec;
 }
 
 
 void runSetmatrixKernel(const clConfig& config, cl_program& program, const size_t m, const size_t n, const size_t p, myBuff& buff) {
     auto kernel = myloadKernel(program, "setMatrix");
 
-    printf("buffer size = %i \n", buff.size);
+    // printf("buffer size = %i \n", buff.size);
     cl_int ret;
     auto memory = clCreateBuffer(config.context, CL_MEM_READ_WRITE, buff.size, NULL, &ret);
     ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), &memory);
@@ -169,7 +161,6 @@ void runSetmatrixKernel(const clConfig& config, cl_program& program, const size_
         buff.size, buff.buffer, 0, NULL, NULL);
     ret = clReleaseKernel(kernel);
     ret = clReleaseMemObject(memory);
-    // safeImage("matrix_parallel.txt", result, m, n, p);
 }
 
 void cleanup(clConfig& config, cl_program& program) {
@@ -186,15 +177,15 @@ void cleanup(clConfig& config, cl_program& program) {
     }
 }
 
-// pass sizes for dimensions
-void run_parallel(const size_t m, const size_t n, const size_t p) {
+// pass sizes for dimensions and returns time run
+double run_parallel(const size_t m, const size_t n, const size_t p) {
     try {
         tryInitOpenCL();
     }
     catch (const std::exception& e) {
         std::cout << "-1" << std::endl;
         std::cerr << e.what() << '\n';
-        return;
+        return-1;
     }
 
     auto config = createContext();
@@ -206,8 +197,16 @@ void run_parallel(const size_t m, const size_t n, const size_t p) {
         sizeof(buff)
     };
 
-    runSetmatrixKernel(config, program, m, n, p, setMatrix);
-    runCalculation(config, program, m, n, p, setMatrix);
-    safeImage("matrix_parallel.txt", setMatrix.buffer, m, n, p);
+    double time = -1;
+    try {
+        runSetmatrixKernel(config, program, m, n, p, setMatrix);
+        time = runCalculation(config, program, m, n, p, setMatrix);
+    }
+    catch (const std::exception& e) {
+        std::cerr << e.what() << '\n';
+    }
+
+    // safeImage("matrix_parallel.txt", setMatrix.buffer, m, n, p);
     cleanup(config, program);
+    return time;
 }
