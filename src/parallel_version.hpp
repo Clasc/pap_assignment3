@@ -108,30 +108,43 @@ void tryInitOpenCL() {
 }
 
 
-void runCalculation(const clConfig& config, cl_program& program, const size_t m, const size_t n, const size_t p, const myBuff& input_buffer) {
+void runCalculation(const clConfig& config, cl_program& program, const size_t m, const size_t n, const size_t p, myBuff& matrix) {
     auto kernel = myloadKernel(program, "calculatMatrix");
 
     //i needs to iterate from 1 to m-1, so we need to decrease it by 1
     // also we need to offset by one bc the first row needs to be skipped!
     // this is similar to :
     // for (int i = 1; i < m - 1; i++) 
-    const size_t global_offset[2] = { 1 , 0 };
-    const size_t global_worksize[2] = { m - 1 , n };
+    const size_t global_offset[2] = { 0,0 };
+    const size_t global_worksize[2] = { m , n };
 
-    // printf("new m  = %i \n", m - 1);
-    // printf("buffer size out = %i \n", output_buffer.size);
+    printf("offset  = %i \n", global_offset[0]);
+    printf("new m  = %i \n", global_worksize[0]);
+    printf("buffer size out = %i \n", matrix.size);
     cl_int ret;
-    auto in_memory = clCreateBuffer(config.context, CL_MEM_READ_WRITE, input_buffer.size, input_buffer.buffer, &ret);
-    ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), &in_memory);
-
+    auto memobj = clCreateBuffer(config.context, CL_MEM_COPY_HOST_PTR, matrix.size, matrix.buffer, &ret);
+    ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), &memobj);
+    if (ret != CL_SUCCESS) {
+        printf("something went wrong setting the kernel arguments!  %i", ret);
+        return;
+    }
     ret = clEnqueueNDRangeKernel(config.command_queue, kernel, 2, global_offset, global_worksize, NULL, 0, NULL, NULL);
     // ret = clEnqueueTask(command_queue, kernel, 0, NULL, NULL);
+    if (ret != CL_SUCCESS) {
+        printf("something went wrong at enquerange!  %i", ret);
+        return;
+    }
 
-    ret = clEnqueueReadBuffer(config.command_queue, in_memory, CL_TRUE, 0,
-        input_buffer.size, input_buffer.buffer, 0, NULL, NULL);
+    ret = clEnqueueReadBuffer(config.command_queue, memobj, CL_TRUE, 0,
+        matrix.size, matrix.buffer, 0, NULL, NULL);
+
+    if (ret != CL_SUCCESS) {
+        printf("something went wrong at enqread!  %i", ret);
+        return;
+    }
 
     ret = clReleaseKernel(kernel);
-    ret = clReleaseMemObject(in_memory);
+    ret = clReleaseMemObject(memobj);
 }
 
 
