@@ -4,6 +4,30 @@
 #include<vector>
 #include<iostream>
 
+
+
+// loads kernel source code into a buffer and returns the size of the source string
+static const char* source[] = {
+"int index_at(int x, int y, int z) {\n"
+"  int m = get_global_size(0);\n"
+"  int n = get_global_size(1);\n"
+"  return x + m * (y + n * z);\n"
+"}\n"
+"__kernel void setMatrix(__global float *A) {\n"
+"  const int i = get_global_id(0);\n"
+"  const int j = get_global_id(1);\n"
+"  A[index_at(i, j, 0)] = (float)i / ((float)j + 1.00);\n"
+"  A[index_at(i, j, 1)] = 1.00;\n"
+"  A[index_at(i, j, 2)] = (float)j / ((float)i + 1.00);\n"
+"}\n"
+"__kernel void calculatMatrix(__global float *A_in) {\n"
+"  const int i = get_global_id(0);\n"
+"  const int j = get_global_id(1);\n"
+"  A_in[index_at(i, j, 1)] +=\n"
+"      1 / sqrt(A_in[index_at(i + 1, j, 0)] + A_in[index_at(i - 1, j, 2)]);\n"
+"}\n"
+};
+
 void safeImage(const char* filename, float* A, const size_t m, size_t n, size_t p) {
     auto index_at = [&m, &n, &p](int x, int y, int z) {return x + m * (y + n * z);};
     std::ofstream ofs(filename, std::ofstream::out);
@@ -12,8 +36,9 @@ void safeImage(const char* filename, float* A, const size_t m, size_t n, size_t 
             for (int k = 0; k < p; k++) {
                 ofs << " " << A[index_at(i, j, k)];
             }
-            ofs << std::endl;
+            ofs << "    ";
         }
+        ofs << std::endl;
     }
     ofs.close();
 }
@@ -83,7 +108,7 @@ void tryInitOpenCL() {
 }
 
 
-myBuff runCalculation(const clConfig& config, cl_program& program, const size_t m, const size_t n, const size_t p, const myBuff& input_buffer, myBuff& output_buffer) {
+void runCalculation(const clConfig& config, cl_program& program, const size_t m, const size_t n, const size_t p, const myBuff& input_buffer) {
     auto kernel = myloadKernel(program, "calculatMatrix");
 
     //i needs to iterate from 1 to m-1, so we need to decrease it by 1
@@ -93,24 +118,20 @@ myBuff runCalculation(const clConfig& config, cl_program& program, const size_t 
     const size_t global_offset[2] = { 1 , 0 };
     const size_t global_worksize[2] = { m - 1 , n };
 
-    printf("new m  = %i \n", m - 1);
-    printf("buffer size out = %i \n", output_buffer.size);
+    // printf("new m  = %i \n", m - 1);
+    // printf("buffer size out = %i \n", output_buffer.size);
     cl_int ret;
     auto in_memory = clCreateBuffer(config.context, CL_MEM_READ_WRITE, input_buffer.size, input_buffer.buffer, &ret);
-    auto out_memory = clCreateBuffer(config.context, CL_MEM_READ_WRITE, output_buffer.size, NULL, &ret);
     ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), &in_memory);
-    ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), &out_memory);
 
     ret = clEnqueueNDRangeKernel(config.command_queue, kernel, 2, global_offset, global_worksize, NULL, 0, NULL, NULL);
     // ret = clEnqueueTask(command_queue, kernel, 0, NULL, NULL);
 
-    ret = clEnqueueReadBuffer(config.command_queue, out_memory, CL_TRUE, 0,
-        output_buffer.size, output_buffer.buffer, 0, NULL, NULL);
+    ret = clEnqueueReadBuffer(config.command_queue, in_memory, CL_TRUE, 0,
+        input_buffer.size, input_buffer.buffer, 0, NULL, NULL);
 
     ret = clReleaseKernel(kernel);
     ret = clReleaseMemObject(in_memory);
-    ret = clReleaseMemObject(out_memory);
-    return output_buffer;
 }
 
 
@@ -147,32 +168,6 @@ void cleanup(clConfig& config, cl_program& program) {
     }
 }
 
-// loads kernel source code into a buffer and returns the size of the source string
-static const char* source[] = {
-"int index_at(int x, int y, int z) {\n"
-"  int m = get_global_size(0);\n"
-"  int n = get_global_size(1);\n"
-"  return x + m * (y + n * z);\n"
-"}\n"
-"__kernel void setMatrix(__global float *A) {\n"
-"  const int i = get_global_id(0);\n"
-"  const int j = get_global_id(1);\n"
-"  A[index_at(i, j, 0)] = (float)i / ((float)j + 1.00);\n"
-"  A[index_at(i, j, 1)] = 1.00;\n"
-"  A[index_at(i, j, 2)] = (float)j / ((float)i + 1.00);\n"
-"}\n"
-"__kernel void calculatMatrix(__global float *A_in, __global float *A_out) {\n"
-"  const int i = get_global_id(0);\n"
-"  const int j = get_global_id(1);\n"
-"  printf(\"i= \%i\\n\", i);\n"
-"  A_out[index_at(i, j, 0)] = A_in[index_at(i + 1, j, 0)];\n"
-"  A_out[index_at(i, j, 2)] = A_in[index_at(i, j, 2)];\n"
-"  A_out[index_at(i, j, 1)] =\n"
-"      A_in[index_at(i, j, 1)] +\n"
-"      1 / sqrt(A_in[index_at(i + 1, j, 0)] + A_in[index_at(i - 1, j, 2)]);\n"
-"}\n"
-};
-
 // pass sizes for dimensions
 void run_parallel(const size_t m, const size_t n, const size_t p) {
     try {
@@ -194,12 +189,7 @@ void run_parallel(const size_t m, const size_t n, const size_t p) {
     };
 
     runSetmatrixKernel(config, program, m, n, p, setMatrix);
-    float calcBuff[m * n * p];
-    auto calcMatrix = (myBuff){
-        buff,
-        sizeof(buff)
-    };
-    runCalculation(config, program, m, n, p, setMatrix, calcMatrix);
-    safeImage("matrix_parallel.txt", calcMatrix.buffer, m, n, p);
+    runCalculation(config, program, m, n, p, setMatrix);
+    safeImage("matrix_parallel.txt", setMatrix.buffer, m, n, p);
     cleanup(config, program);
 }

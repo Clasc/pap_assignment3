@@ -35,8 +35,9 @@ int run_sequential(const int m, const int n, const int p) {
 			for (int k = 0; k < p; k++) {
 				ofs << " " << A[i][j][k];
 			}
-			ofs << std::endl;
+			ofs << "    ";
 		}
+		ofs << std::endl;
 	}
 
 	ofs.close();
