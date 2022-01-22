@@ -3,6 +3,6 @@
 
 int main(int argc, char const* argv[]) {
     run_parallel();
-    //run_sequential();
+    run_sequential();
     return 0;
 }

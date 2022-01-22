@@ -5,7 +5,7 @@
 #include<iostream>
 #define MAX_SOURCE_SIZE (4096)
 
-static const cl_int m = 4, n = 4, p = 2;
+static const cl_int m = 4, n = 4, p = 3;
 static const size_t MEM_SIZE = m * n * p;
 
 int index_at(int x, int y, int z) {
@@ -38,19 +38,17 @@ void tryInitOpenCL() {
 
 // loads kernel source code into a buffer and returns the size of the source string
 static const char* source[] = {
-"int index_at(const int n, const int p, int x, int y, int z) {\n"
-"  return x + n * (y + p * z);\n"
-"}\n"
-"\n"
-"__kernel void setMatrix(const int maxRow, const int maxCol, const int maxDepth,\n"
-"                        __global float *A) {\n"
-"  const int row = get_global_id(0);\n"
-"  const int col = get_global_id(1);\n"
-"  index_at(maxCol, maxDepth, row, col, 0);\n"
-"  A[index_at(maxCol, maxDepth, row, col, 0)] = (float)row / ((float)col + 1.00);\n"
-"  A[index_at(maxCol, maxDepth, row, col, 1)] = 1.00;\n"
-"  A[index_at(maxCol, maxDepth, row, col, 2)] = (float)col / ((float)row + 1.00);\n"
-"}\n"
+"int index_at(const int p, int x, int y, int z) {"
+"  int n = get_global_size(1);"
+"  return x + n * (y + p * z);"
+"}"
+"__kernel void setMatrix(const int maxDepth, __global float *A) {"
+"  const int row = get_global_id(0);"
+"  const int col = get_global_id(1);"
+"  A[index_at(maxDepth, row, col, 0)] = (float)row / ((float)col + 1.00);"
+"  A[index_at(maxDepth, row, col, 1)] = 1.00;"
+"  A[index_at(maxDepth, row, col, 2)] = (float)col / ((float)row + 1.00);"
+"}"
 };
 
 void run_parallel() {
@@ -91,10 +89,8 @@ void run_parallel() {
     printf("buffer size = %i \n", buffer_size);
     auto memory = clCreateBuffer(context, CL_MEM_READ_WRITE, buffer_size, NULL, &ret);
 
-    ret = clSetKernelArg(kernel, 0, sizeof(cl_int), &m);
-    ret = clSetKernelArg(kernel, 1, sizeof(cl_int), &n);
-    ret = clSetKernelArg(kernel, 2, sizeof(cl_int), &p);
-    ret = clSetKernelArg(kernel, 3, sizeof(cl_mem), &memory);
+    ret = clSetKernelArg(kernel, 0, sizeof(cl_int), &p);
+    ret = clSetKernelArg(kernel, 1, sizeof(cl_mem), &memory);
 
 
     const size_t global_worksize[2] = { m , n };
