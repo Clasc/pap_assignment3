@@ -115,10 +115,6 @@ void tryInitOpenCL() {
 double runCalculation(const clConfig& config, cl_program& program, const size_t m, const size_t n, const size_t p, myBuff& matrix) {
     auto kernel = myloadKernel(program, "calculatMatrix");
 
-    //i needs to iterate from 1 to m-1, so we need to decrease it by 1
-    // also we need to offset by one bc the first row needs to be skipped!
-    // this is similar to :
-    // for (int i = 1; i < m - 1; i++) 
     const size_t global_offset[2] = { 0,0 };
     const size_t global_worksize[2] = { m , n };
 
@@ -134,7 +130,7 @@ double runCalculation(const clConfig& config, cl_program& program, const size_t 
         throw runtime_error("cl error");
     }
 
-    auto parallelExec = measure([&] {
+    auto time = measure([&] {
         ret = clEnqueueNDRangeKernel(config.command_queue, kernel, 2, global_offset, global_worksize, NULL, 0, NULL, NULL);
         // ret = clEnqueueTask(command_queue, kernel, 0, NULL, NULL);
         if (ret != CL_SUCCESS) {
@@ -154,7 +150,7 @@ double runCalculation(const clConfig& config, cl_program& program, const size_t 
 
     ret = clReleaseKernel(kernel);
     ret = clReleaseMemObject(memobj);
-    return parallelExec;
+    return time;
 }
 
 
