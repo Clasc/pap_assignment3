@@ -190,7 +190,13 @@ void cleanup(clConfig& config, cl_program& program) {
     }
 }
 
-// pass sizes for dimensions and returns time run
+/**
+ * @param save_to_file filename to write the resulting matrix to. Writing will be skipped if left empty
+ * @brief sets up opencl and runs the algorithm in parallel.
+ * The matrix is filled in parallel and calculations are also done in parallel.
+ * However, only the calculation step is measured.
+ * @return the time taken in seconds. -1 if something went wrong.
+ **/
 double run_parallel(const char* save_to_file = nullptr) {
     try {
         tryInitOpenCL();

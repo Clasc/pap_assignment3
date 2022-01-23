@@ -5,8 +5,14 @@
 #include <chrono>
 using namespace std;
 
-// sizes cannot be passed because of segmentation faults -> have to be static to be that big!
-// stores computed matrix in file if filename is passed
+/**
+ * @param save_to_file filename to write the resulting matrix to. Writing will be skipped if left empty
+ * @brief sets up opencl and runs the algorithm in parallel.
+ * Creates the matrix as provided by the lecture.
+ * Only small enhancements were done (eg. not iterating over p)
+ * Measures the time taken for calculating the result, not for filling the matrix.
+ * @return the time taken in seconds.
+ **/
 double run_sequential(const char* save_to_file = nullptr) {
 	// const int m = 8192, n = 8192, p = 3;
 	// let the size of the matrix be divisible by 32
