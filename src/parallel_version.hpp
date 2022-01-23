@@ -191,7 +191,7 @@ void cleanup(clConfig& config, cl_program& program) {
 }
 
 // pass sizes for dimensions and returns time run
-double run_parallel() {
+double run_parallel(const char* save_to_file = nullptr) {
     try {
         tryInitOpenCL();
     }
@@ -213,12 +213,14 @@ double run_parallel() {
     try {
         runSetmatrixKernel(config, program, m, n, p, setMatrix);
         time = runCalculation(config, program, m, n, p, setMatrix);
+        if (save_to_file) {
+            safeImage(save_to_file, setMatrix.buffer, m, n, p);
+        }
     }
     catch (const std::exception& e) {
         std::cerr << e.what() << '\n';
     }
 
-    // safeImage("matrix_parallel.txt", setMatrix.buffer, m, n, p);
     cleanup(config, program);
     return time;
 }
